@@ -185,7 +185,7 @@ const bookAppointment = async (req, res) => {
 const listAppointment = async (req, res) => {
     try {
         const { userId } = req.body;
-        const appointments = await appointmentModel.find({ userId });
+        const appointments = await appointmentModel.find({ userId }).populate("userData docData");
         res.json({ success: true, appointments });
     }
     catch (error) {
@@ -205,7 +205,7 @@ const cancelAppointment = async (req, res) => {
             return res.json({ success: false, message: "Unauthorized action" });
         }
 
-        await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true });
+        await appointmentModel.findByIdAndDelete(appointmentId);
 
         // Remove slot from doctor's slots_booked
         const { docId, slotDate, slotTime } = appointmentData;
