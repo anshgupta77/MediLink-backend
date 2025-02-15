@@ -74,6 +74,7 @@ const loginAdmin = async (req, res) => {
 
         if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
             const token = jwt.sign(email + password, process.env.JWT_SECRET);
+            console.log(typeof token);
             res.json({ success: true, message: "Login successful", token });
         }
         else {
