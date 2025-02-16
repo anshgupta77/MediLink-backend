@@ -1,12 +1,22 @@
 import doctorModel from "../models/doctorModel.js";
+
 async function filterDoctor(req, res, next) {
-    const { speciality } = req.query;
-    const doctors = await doctorModel.find({}).select(["-password", "-email"]);
-    var filteredDoctors = doctors;
-    if(speciality) {
-        filteredDoctors = doctors.filter(doctor => doctor.speciality === speciality);
+    const { speciality, search } = req.query;
+    let query = {};
+
+    if (speciality) {
+        query.speciality = speciality; // Filter by speciality
     }
-    req.doctors = filteredDoctors;
+
+    if (search) {
+        query.$or = [
+            { name: { $regex: search, $options: "i" } },  // Search by doctor name (case insensitive)
+            { speciality: { $regex: search, $options: "i" } } // Search by speciality
+        ];
+    }
+
+    const doctors = await doctorModel.find(query);
+    req.doctors = doctors;
     next();
 }
 
