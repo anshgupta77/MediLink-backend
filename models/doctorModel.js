@@ -1,5 +1,14 @@
 import mongoose from 'mongoose';
 
+
+const doctorAppintmentSchema = new mongoose.Schema({
+    appointment:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "appointment",
+        required: true,
+    }
+});
+
 const doctorSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -53,7 +62,10 @@ const doctorSchema = new mongoose.Schema({
     slots_booked: {
         type: Object,
         default: {}
-    }
+    },
+    myAppointments: { 
+        type:[doctorAppintmentSchema], default: [] 
+    },
 }, { minimize: false });
 
 const doctorModel = mongoose.model.doctor || mongoose.model('doctor', doctorSchema);

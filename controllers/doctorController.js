@@ -55,7 +55,16 @@ const loginDoctor = async (req, res) => {
 const appointmentsDoctor = async (req, res) => {
     try {
         const { docId } = req.body;
-        const appointments = await appointmentModel.find({ docId }).populate("userData docData");
+        const doctor = await doctorModel.findById( docId ).populate({
+            path: "myAppointments.appointment",
+            populate: {
+                path: "userData",
+                select: "name email image",
+                model: "user"
+            }
+        });
+
+        const appointments = doctor.myAppointments;
 
         res.json({ success: true, appointments });
 

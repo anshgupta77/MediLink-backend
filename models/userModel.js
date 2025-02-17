@@ -1,5 +1,16 @@
 import mongoose from 'mongoose';
 
+const userAppintmentSchema = new mongoose.Schema({
+    appointment:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "appointment",
+        required: true,
+    }
+});
+
+
+
+
 const userSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
@@ -9,7 +20,8 @@ const userSchema = new mongoose.Schema({
     gender: { type: String, default: "Not Selected" },
     dob: { type: String, default: "Not Selected" },
     phone: { type: String, default: "0000000000" },
-});
+    myAppointments: { type: [userAppintmentSchema], default: [] },
+}, {minimize: false});
 
 const userModel = mongoose.model.user || mongoose.model('user', userSchema);
 

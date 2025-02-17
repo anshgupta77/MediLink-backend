@@ -129,6 +129,13 @@ const updateProfile = async (req, res) => {
 const bookAppointment = async (req, res) => {
     try {
         const { userId, docId, slotDate, slotTime } = req.body;
+        if(!slotDate){
+            return res.json({ success: false, message: "Please select a date" });
+        }
+
+        if(!slotTime){
+            return res.json({ success: false, message: "Please select a time" });
+        }
 
         const docData = await doctorModel.findById(docId).select("-password");
 
@@ -153,8 +160,6 @@ const bookAppointment = async (req, res) => {
 
         const userData = await userModel.findById(userId).select("-password");
 
-        delete docData.slots_booked;
-
         const appointmentData = {
             userId,
             docId,
@@ -169,6 +174,12 @@ const bookAppointment = async (req, res) => {
         const newAppointment = new appointmentModel(appointmentData);
         await newAppointment.save();
 
+        console.log("Appointment id:", newAppointment._id.toString());
+        userData.myAppointments.push({appointment: newAppointment._id});
+        await userData.save();
+
+        docData.myAppointments.push({appointment: newAppointment._id});
+        await docData.save();
 
         // Save new slots booked data in docData
         await doctorModel.findByIdAndUpdate(docId, { slots_booked });
@@ -185,7 +196,16 @@ const bookAppointment = async (req, res) => {
 const listAppointment = async (req, res) => {
     try {
         const { userId } = req.body;
-        const appointments = await appointmentModel.find({ userId }).populate("userData docData");
+        console.log("UserId", userId);
+        const user = await userModel.findById( userId ).populate({
+            path:"myAppointments.appointment",
+            populate: {
+                path: "docData",
+                select: "-password",
+                model: "doctor"
+            }
+        });
+        const appointments = user.myAppointments;
         res.json({ success: true, appointments });
     }
     catch (error) {
