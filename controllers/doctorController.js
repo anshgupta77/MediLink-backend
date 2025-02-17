@@ -6,7 +6,7 @@ import appointmentModel from "../models/appointmentModel.js";
 
 const changeAvailability = async (req, res) => {
     try {
-        const { docId } = req.body;
+        const docId = req.docId;
         const docData = await doctorModel.findById(docId);
         await doctorModel.findByIdAndUpdate(docId, { available: !docData.available });
         res.json({ success: true, message: "Availability changed successfully" });
@@ -54,12 +54,12 @@ const loginDoctor = async (req, res) => {
 // API to get doctor appointments for doctor panel
 const appointmentsDoctor = async (req, res) => {
     try {
-        const { docId } = req.body;
+        const docId = req.docId;
         const doctor = await doctorModel.findById( docId ).populate({
             path: "myAppointments.appointment",
             populate: {
                 path: "userData",
-                select: "name email image",
+                select: "name email image dob",
                 model: "user"
             }
         });
@@ -76,12 +76,24 @@ const appointmentsDoctor = async (req, res) => {
 // API to mark appointment completed for doctor panel
 const appointmentCompleted = async (req, res) => {
     try {
-        const { docId, appointmentId } = req.body;
+        const { appointmentId } = req.body;
+        const docId = req.docId;
 
         const appointmentData = await appointmentModel.findById(appointmentId);
 
         if (appointmentData && appointmentData.docId == docId) {
             await appointmentModel.findByIdAndUpdate(appointmentId, { isCompleted: true });
+
+            const { docId, slotDate, slotTime } = appointmentData;
+
+            const doctorData = await doctorModel.findById(docId);
+
+            let slots_booked = doctorData.slots_booked;
+
+            slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime);
+
+            await doctorModel.findByIdAndUpdate(docId, { slots_booked });
+
             return res.json({ success: true, message: "Appointment completed successfully" });
         } else {
             return res.json({ success: false, message: "Mark Failed" });
@@ -96,12 +108,22 @@ const appointmentCompleted = async (req, res) => {
 // API to Cancel appointment for doctor panel
 const appointmentCancel = async (req, res) => {
     try {
-        const { docId, appointmentId } = req.body;
+        const { appointmentId } = req.body;
+        const docId = req.docId;
 
         const appointmentData = await appointmentModel.findById(appointmentId);
 
         if (appointmentData && appointmentData.docId == docId) {
             await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true });
+            const { docId, slotDate, slotTime } = appointmentData;
+
+            const doctorData = await doctorModel.findById(docId);
+
+            let slots_booked = doctorData.slots_booked;
+
+            slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime);
+
+            await doctorModel.findByIdAndUpdate(docId, { slots_booked });
             return res.json({ success: true, message: "Appointment cancelled successfully" });
         } else {
             return res.json({ success: false, message: "Cancelled Failed" });
@@ -115,7 +137,7 @@ const appointmentCancel = async (req, res) => {
 // API to get dashboard data for doctor panel
 const doctorDashboard = async (req, res) => {
     try {
-        const { docId } = req.body;
+        const docId = req.docId;
 
         const appointments = await appointmentModel.find({ docId });
 
@@ -152,7 +174,7 @@ const doctorDashboard = async (req, res) => {
 // API to get doctor profile for Doctor Panel
 const doctorProfile = async (req, res) => {
     try {
-        const { docId } = req.body;
+        const docId = req.docId;
         const profileData = await doctorModel.findById(docId).select(["-password"]);
         res.json({ success: true, profileData });
     } catch (error) {
@@ -163,7 +185,8 @@ const doctorProfile = async (req, res) => {
 // API to udpate doctor profile for Doctor Panel
 const updateDoctorProfile = async (req, res) => {
     try {
-        const { docId, fees, address, available } = req.body;
+        const { fees, address, available } = req.body;
+        const docId = req.docId;
         await doctorModel.findByIdAndUpdate(docId, { fees, address, available });
         res.json({ success: true, message: "Profile Updated Successfully" });
     }
@@ -171,6 +194,24 @@ const updateDoctorProfile = async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 }
+
+const removeAppointment = async (req,res) =>{
+    try {
+        const docId = req.docId;
+        const { appointmentId } = req.body;
+        const doctor = await doctorModel.findById(docId);
+        const appointments = doctor.myAppointments;
+        const newAppointments = appointments.filter(appointment => appointment.appointment.toString() !== appointmentId);
+        await doctorModel.findByIdAndUpdate(docId, { myAppointments: newAppointments });
+        res.json({ success: true, message: "Appointment removed successfully" });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+}
+
+        
+
 
 
 export {
@@ -182,5 +223,6 @@ export {
     appointmentCancel,
     doctorDashboard,
     doctorProfile,
-    updateDoctorProfile
+    updateDoctorProfile,
+    removeAppointment
 }

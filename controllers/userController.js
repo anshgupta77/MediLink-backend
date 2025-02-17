@@ -89,7 +89,7 @@ const loginUser = async (req, res) => {
 // API to get user profile details
 const getProfile = async (req, res) => {
     try {
-        const { userId } = req.body;
+        const userId = req.userId;
         const userData = await userModel.findById(userId).select("-password");
         res.json({ success: true, userData });
     }
@@ -101,7 +101,8 @@ const getProfile = async (req, res) => {
 // API to update user profile details
 const updateProfile = async (req, res) => {
     try {
-        const { userId, name, phone, address, dob, gender } = req.body;
+        const userId = req.userId;
+        const { name, phone, address, dob, gender } = req.body;
         const imageFile = req.file;
 
         if (!name || !phone || !gender || !dob) {
@@ -128,7 +129,8 @@ const updateProfile = async (req, res) => {
 // API to book an appointment
 const bookAppointment = async (req, res) => {
     try {
-        const { userId, docId, slotDate, slotTime } = req.body;
+        const userId = req.userId;
+        const { docId, slotDate, slotTime } = req.body;
         if(!slotDate){
             return res.json({ success: false, message: "Please select a date" });
         }
@@ -195,13 +197,13 @@ const bookAppointment = async (req, res) => {
 // API to get user's appointments
 const listAppointment = async (req, res) => {
     try {
-        const { userId } = req.body;
+        const userId = req.userId;
         console.log("UserId", userId);
         const user = await userModel.findById( userId ).populate({
             path:"myAppointments.appointment",
             populate: {
                 path: "docData",
-                select: "-password",
+                select: "-password -slots_booked -myAppointments",
                 model: "doctor"
             }
         });
@@ -216,7 +218,8 @@ const listAppointment = async (req, res) => {
 // API to cancel an appointment
 const cancelAppointment = async (req, res) => {
     try {
-        const { userId, appointmentId } = req.body;
+        const { appointmentId } = req.body;
+        const userId = req.userId;
 
         const appointmentData = await appointmentModel.findById(appointmentId);
 
@@ -225,7 +228,7 @@ const cancelAppointment = async (req, res) => {
             return res.json({ success: false, message: "Unauthorized action" });
         }
 
-        await appointmentModel.findByIdAndDelete(appointmentId);
+        await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true });
 
         // Remove slot from doctor's slots_booked
         const { docId, slotDate, slotTime } = appointmentData;
@@ -247,6 +250,21 @@ const cancelAppointment = async (req, res) => {
     }
 }
 
+const removeAppointment = async (req,res) =>{
+    try {
+        const userId = req.userId;
+        const { appointmentId } = req.body;
+        const user = await userModel.findById(userId);
+        const appointments = user.myAppointments;
+        const newAppointments = appointments.filter(appointment => appointment.appointment.toString() !== appointmentId);
+        await userModel.findByIdAndUpdate(userId, { myAppointments: newAppointments });
+        res.json({ success: true, message: "Appointment removed successfully" });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+}
+
 // const razorpayInstance = new razorpay({
 //     key_id: process.env.RAZORPAY_KEY_ID,
 //     key_secret: process.env.RAZORPAY_KEY_SECRET
@@ -257,4 +275,4 @@ const cancelAppointment = async (req, res) => {
 // const paymentrazorpay = async (req, res) => {
 // }
 
-export { registerUser, loginUser, getProfile, updateProfile, bookAppointment, listAppointment, cancelAppointment }
+export { registerUser, loginUser, getProfile, updateProfile, bookAppointment, listAppointment, cancelAppointment, removeAppointment }
