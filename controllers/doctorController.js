@@ -138,8 +138,16 @@ const appointmentCancel = async (req, res) => {
 const doctorDashboard = async (req, res) => {
     try {
         const docId = req.docId;
+        const doctor = await doctorModel.findById( docId ).populate({
+            path: "myAppointments.appointment",
+            populate: {
+                path: "userData",
+                select: "name email image dob",
+                model: "user"
+            }
+        });
 
-        const appointments = await appointmentModel.find({ docId });
+        const appointments = doctor.myAppointments;
 
         let earning = 0;
 

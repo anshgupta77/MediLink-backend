@@ -141,7 +141,7 @@ const adminDashboard = async (req, res) => {
     try {
         const doctors = await doctorModel.find({});
         const user = await userModel.find({});
-        const appointments = await appointmentModel.find({});
+        const appointments = await appointmentModel.find({}).populate("docData userData");
         
         const dashData = {
             doctors: doctors.length,
@@ -156,5 +156,17 @@ const adminDashboard = async (req, res) => {
         res.json({ success:false, message: error.message });
     }
 }
+
+// const removeAppointment = async (req,res) =>{
+//     try {
+//         const { appointmentId } = req.body;
+//         const appointments = await appointmentModel.findByIdAndDelete(appointmentId);
+//         res.json({ success: true, message: "Appointment removed successfully" });
+//     }
+//     catch (error) {
+//         res.status(500).json({ success: false, message: error.message });
+//     }
+// }
+
 
 export { addDoctor, loginAdmin, allDoctors, appointmentsAdmin, appointmentCancel, adminDashboard };
