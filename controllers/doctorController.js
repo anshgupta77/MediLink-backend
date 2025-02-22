@@ -6,11 +6,14 @@ import appointmentModel from "../models/appointmentModel.js";
 
 const changeAvailability = async (req, res) => {
     try {
-        const docId = req.docId;
+        const {docId} = req.body;
+        console.log(docId);
         const docData = await doctorModel.findById(docId);
+        console.log(docData);
         await doctorModel.findByIdAndUpdate(docId, { available: !docData.available });
         res.json({ success: true, message: "Availability changed successfully" });
     } catch (error) {
+        console.log(error);
         res.json({ success: false, message: error.message });
     }
 }
