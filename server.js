@@ -42,24 +42,20 @@ io.on('connection', (socket) => {
   console.log('a user connected', socket.id);
 
   // Add user to the online list
-  socket.on('userOnline', (userId) => {
-    onlineUsers.set(userId, socket.id);
-    console.log(onlineUsers, `${userId} is online`);
+  socket.on('clientOnline', ({clientId, doctorName}) => {
+    onlineUsers.set(clientId, socket.id);
+    console.log(onlineUsers, `${clientId} is online and name of the doctor ${doctorName}`);
   });
 
 
   // Handle Sending Messages
-  socket.on('sendMessage', async ({senderId, receiverId, message}) => {
-    console.log("New message received:", { senderId, receiverId, message });
+  socket.on('sendMessage', async ({senderId, receiverId, message, timestamp, sender}) => {
+    console.log("New message received:", { senderId, receiverId, message, timestamp, sender });
     try {
-      // Store the message in MongoDB
-      const newMessage = new Message({ senderId, receiverId, message });
-      await newMessage.save();
-
       // Send message to the receiver if online
       const receiverSocketId = onlineUsers.get(receiverId);
       if (receiverSocketId) {
-        io.to(receiverSocketId).emit("receiveMessage", { senderId, message });
+        io.to(receiverSocketId).emit("receiveMessage", { senderId, receiverId, message, timestamp, sender});
       }
     } catch (error) {
       console.error("Error saving message:", error);
