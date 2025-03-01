@@ -3,7 +3,7 @@ import { sendMessage, getAllMessages } from "../controllers/chatController.js";
 const router = express.Router();
 
 // 📩 Send a Message
-router.post("/send", sendMessage);
+router.post("/sendMessage", sendMessage);
 
 // 📩 Get Messages Between Two Users
 router.get("/:senderId/:receiverId", getAllMessages);

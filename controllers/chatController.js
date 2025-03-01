@@ -19,9 +19,9 @@ const getAllMessages = async (req, res) => {
           { senderId: req.params.senderId, receiverId: req.params.receiverId },
           { senderId: req.params.receiverId, receiverId: req.params.senderId }
         ]
-      }).sort({ timestamp: 1 });
+      }).sort({ timestamp: 1 }).select("message");
   
-      res.json(messages);
+      res.json({success : true, messages: messages});
     } catch (error) {
       res.status(500).json({ error: "Could not fetch messages" });
     }
